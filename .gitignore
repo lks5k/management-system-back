@@ -15,6 +15,7 @@ target/
 *.classpath
 *.project
 *.settings/
+.cursorrules
 
 # ──────── OS ────────
 .DS_Store
