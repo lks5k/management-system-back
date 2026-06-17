@@ -1,0 +1,40 @@
+spring:
+  # ── Datasource ─────────────────────────────────────────────────────
+  # En producción las variables se inyectan desde el entorno del VPS,
+  # no desde un archivo .env local.
+  datasource:
+    url: jdbc:postgresql://${PROD_DB_HOST}:${PROD_DB_PORT:5432}/${PROD_DB_NAME}?serverTimezone=UTC&sslmode=require
+    username: ${PROD_DB_USER}
+    password: ${PROD_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: ImsasHikariProd
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ── JPA (sobreescritura prod) ───────────────────────────────────────
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# ── Actuator: restringido en prod ──────────────────────────────────
+management:
+  server:
+    port: 8081
+  endpoint:
+    health:
+      show-details: never
+
+# ── Logging conservador en prod ────────────────────────────────────
+logging:
+  level:
+    root: WARN
+    com.imsas: INFO
+    org.flywaydb: WARN
+  file:
+    name: /var/log/imsas/erp.log
