@@ -7,8 +7,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -24,11 +27,13 @@ import java.util.UUID;
  *   <li>{@code actualizadoEn} — timestamp de última modificación, actualizado en {@code @PreUpdate}.</li>
  * </ul>
  *
- * <p>Al usar {@code @MappedSuperclass} estos campos se mapean directamente en la tabla
- * de cada subclase, sin generar una tabla propia para {@code BaseEntity}.
+ * <p>Usa {@code @SuperBuilder} para que las subclases puedan incluir estos campos
+ * en sus propios builders mediante {@code @SuperBuilder} en cascada.
  */
 @Getter
 @Setter
+@SuperBuilder
+@NoArgsConstructor
 @MappedSuperclass
 public abstract class BaseEntity {
 
@@ -43,8 +48,10 @@ public abstract class BaseEntity {
 
     /**
      * Indica si el registro está activo. {@code false} equivale a eliminación lógica (RN-12).
-     * Valor por defecto: {@code true}.
+     * Valor por defecto: {@code true}. Se marca con {@code @Builder.Default} para que el
+     * valor inicial se respete al construir instancias mediante el builder.
      */
+    @Builder.Default
     @Column(nullable = false)
     private boolean activo = true;
 

@@ -75,6 +75,7 @@ public class ContactoEmail {
      * Indica si este es el correo principal del contacto.
      * La unicidad de {@code esPrincipal = true} por contacto se valida en el servicio.
      */
+    @Builder.Default
     @Column(name = "es_principal", nullable = false)
     private boolean esPrincipal = false;
 
