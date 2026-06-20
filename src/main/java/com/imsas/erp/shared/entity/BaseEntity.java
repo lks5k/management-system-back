@@ -59,14 +59,14 @@ public abstract class BaseEntity {
      * Timestamp de creación del registro en UTC.
      * Asignado automáticamente por {@link #prePersist()} y nunca modificable.
      */
-    @Column(name = "creado_en", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant creadoEn;
 
     /**
      * Timestamp de la última modificación del registro en UTC.
      * Actualizado automáticamente por {@link #preUpdate()}.
      */
-    @Column(name = "actualizado_en", nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private Instant actualizadoEn;
 
     /**
