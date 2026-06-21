@@ -68,7 +68,7 @@ public class Contacto extends BaseEntity {
 
     /**
      * Indica si este contacto es el responsable de facturación de la empresa.
-     * La unicidad de un contacto de facturación por empresa se valida en el servicio.
+     * Flag informativo; una empresa puede tener varios contactos con este flag en {@code true}.
      */
     @Column(name = "es_facturacion", nullable = false)
     private boolean esFacturacion = false;

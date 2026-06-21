@@ -1,6 +1,6 @@
 # MODELO DE DATOS — IMSAS V1
 **Sistema de Gestión de Producción — Imagen Marquillas SAS**
-**Versión:** 1.1
+**Versión:** 2.0
 **Estado:** Aprobado
 
 ---
@@ -11,6 +11,8 @@
 - Todas las tablas tienen `created_at` y `updated_at` automáticos
 - Eliminación lógica universal: campo `activo boolean`
 - Nombres de columnas en snake_case
+- Todos los consecutivos de código (`P-`, `BD-`, `ART-`) inician en la
+  letra `A`, no `S` (ver SDD sección 5.3)
 
 ---
 
@@ -19,16 +21,19 @@
 ### usuarios
 | Campo | Tipo | Restricciones |
 |---|---|---|
-| id | UUID | PK, default gen_random_uuid() |
+| id | UUID | PK |
 | nombre | VARCHAR(120) | NOT NULL |
 | email | VARCHAR(120) | NOT NULL, UNIQUE |
 | password_hash | VARCHAR(255) | NOT NULL |
 | rol | VARCHAR(20) | NOT NULL, enum |
 | activo | BOOLEAN | NOT NULL, default TRUE |
-| created_at | TIMESTAMPTZ | NOT NULL, default NOW() |
-| updated_at | TIMESTAMPTZ | NOT NULL, default NOW() |
+| created_at | TIMESTAMPTZ | NOT NULL |
+| updated_at | TIMESTAMPTZ | NOT NULL |
 
-**Rol enum:** `SUPERADMIN, ADMIN, MANAGER, OPERATOR, OFFICER, SALES_REP`
+**Rol enum:** `SUPERADMIN, ADMIN, MANAGER, OPERATOR, SALES_REP`
+
+> Nota: el rol `OFFICER` fue retirado del modelo. Si se requiere en el
+> futuro, debe aprobarse explícitamente y documentarse aquí primero.
 
 ---
 
@@ -69,6 +74,10 @@
 | created_at | TIMESTAMPTZ | NOT NULL |
 | updated_at | TIMESTAMPTZ | NOT NULL |
 
+> `es_facturacion` es un flag informativo. No tiene restricción de
+> unicidad por empresa — una empresa puede tener varios contactos
+> marcados como facturación si así lo requiere operativamente.
+
 ---
 
 ### contacto_emails
@@ -108,7 +117,37 @@
 | created_at | TIMESTAMPTZ | NOT NULL |
 | updated_at | TIMESTAMPTZ | NOT NULL |
 
-> Lista administrable por ADMIN/SUPERADMIN. Se selecciona en solicitudes, no se escribe libre.
+> Lista administrable por ADMIN/SUPERADMIN. Se selecciona en
+> solicitudes, no se escribe libre.
+
+---
+
+### artes  *(tabla nueva)*
+| Campo | Tipo | Restricciones |
+|---|---|---|
+| id | UUID | PK |
+| codigo | VARCHAR(15) | NOT NULL, UNIQUE — formato `ART-A####` |
+| empresa_id | UUID | NOT NULL, FK → empresas |
+| marca_id | UUID | NOT NULL, FK → marcas |
+| producto_id | UUID | NOT NULL, FK → productos |
+| version_actual | SMALLINT | NOT NULL, default 0 — equivale a `-00` |
+| activo | BOOLEAN | NOT NULL, default TRUE |
+| created_at | TIMESTAMPTZ | NOT NULL |
+| updated_at | TIMESTAMPTZ | NOT NULL |
+
+**Restricción:** UNIQUE (empresa_id, marca_id, producto_id) WHERE activo = true — solo puede
+existir un Arte vigente por esa combinación exacta.
+
+**Restricción:** CHECK (version_actual BETWEEN 0 AND 99)
+
+> El historial completo de qué solicitud generó cada versión vive en la
+> tabla `solicitudes` (campo `version_arte_generada`), no en una tabla
+> de versiones separada — replicando el comportamiento del Excel actual.
+>
+> Al superar la versión 99, se crea un registro `Arte` nuevo (nuevo
+> `codigo`, `version_actual` reinicia en 0); el Arte anterior permanece
+> en la tabla como histórico inactivo o se relaciona mediante un campo
+> `arte_predecesor_id` (a definir en el detalle de implementación).
 
 ---
 
@@ -116,11 +155,14 @@
 | Campo | Tipo | Restricciones |
 |---|---|---|
 | id | UUID | PK |
-| codigo | VARCHAR(20) | UNIQUE, nullable hasta BORRADOR→PENDIENTE |
-| codigo_base_datos | VARCHAR(20) | UNIQUE, autoderivado |
+| codigo | VARCHAR(20) | UNIQUE — formato `P-[A-Z]{1}[0-9]{5}` |
+| codigo_base_datos | VARCHAR(20) | UNIQUE — formato `BD-[A-Z]{1}[0-9]{5}-[0-9]{2}` |
 | version_bd | SMALLINT | NOT NULL, default 0 |
 | motivo_version_bd | TEXT | obligatorio si version_bd > 0 |
 | solicitud_origen_id | UUID | FK → solicitudes (nullable) |
+| arte_id | UUID | FK → artes (nullable) |
+| version_arte_generada | SMALLINT | nullable — versión de Arte que esta solicitud generó (si aplica) |
+| cantidad_versiones_entregadas | SMALLINT | nullable, CHECK ≤ 3 — para solicitudes DISEÑO que generan múltiples versiones |
 | asesor_id | UUID | NOT NULL, FK → usuarios |
 | empresa_id | UUID | NOT NULL, FK → empresas |
 | contacto_id | UUID | FK → contactos (nullable) |
@@ -161,17 +203,21 @@
 usuarios ──< solicitudes (asesor_id)
 empresas ──< contactos
 empresas ──< marcas
+empresas ──< artes
 empresas ──< solicitudes
 contactos ──< contacto_emails
 contactos ──< solicitudes
+marcas ──< artes
 marcas ──< solicitudes
+productos ──< artes
 productos ──< solicitudes
+artes ──< solicitudes (arte_id)
 solicitudes ──< solicitudes (solicitud_origen_id, self-reference)
 ```
 
 ---
 
-## Flujo de estados
+## Flujo de estados de Solicitud
 
 ```
 BORRADOR → CONFIRMAR → PENDIENTE → COMPLETADO
@@ -181,16 +227,20 @@ BORRADOR → CONFIRMAR → PENDIENTE → COMPLETADO
 
 ---
 
-## Flujo "Convertir a Pedido"
+## Flujo de reutilización y versionado de Arte
 
-Cuando una solicitud tipo `DISEÑO` es aprobada:
-1. El asesor hace clic en "Convertir a Pedido"
-2. El sistema crea una nueva solicitud tipo `PEDIDO` copiando todos los campos
-3. El nuevo registro queda vinculado via `solicitud_origen_id` al DISEÑO original
-4. El asesor ajusta solo lo que cambie (cantidad, medidas, etc.)
-5. Ambos registros quedan históricos e intactos
+Al crear una solicitud tipo `DISEÑO`:
 
-El mismo mecanismo aplica para `REPOSICION`.
+1. Buscar `Arte` por `(empresa_id, marca_id, producto_id)`
+2. **Si existe:** vincular `arte_id`; al completar, incrementar
+   `artes.version_actual` en +1 (o en el número de
+   `cantidad_versiones_entregadas`, máximo 3)
+3. **Si no existe:** crear `Arte` nuevo, `version_actual = 0`
+4. **Si `version_actual` alcanza 99:** la siguiente entrega crea un
+   `Arte` nuevo con código consecutivo siguiente, `version_actual = 0`
+
+Solicitudes que no son tipo `DISEÑO` (PEDIDO, MUESTRAS, REPOSICION, CORTE,
+PRESTAMO) solo **referencian** el Arte vigente — no lo modifican.
 
 ---
 
@@ -204,15 +254,24 @@ El mismo mecanismo aplica para `REPOSICION`.
 | RN-04 | El código de solicitud se genera al pasar de BORRADOR a PENDIENTE |
 | RN-05 | El consecutivo nunca se reinicia |
 | RN-06 | El código de solicitud es inmutable una vez asignado |
-| RN-07 | codigoBaseDatos = "BD-" + sufijo del código. Versión inicia en -00 |
-| RN-08 | version_bd incrementa solo por corrección estructural con motivo obligatorio |
-| RN-09 | Pueden versionar BD: SALES_REP, OPERATOR, ADMIN, SUPERADMIN |
+| RN-07 | codigoBaseDatos = "BD-" + sufijo del código + versión. Versión inicia en -00 |
+| RN-08 | version_bd incrementa solo por corrección estructural de los datos del cliente con motivo obligatorio |
+| RN-09 | Pueden versionar BD: SALES_REP, ADMIN, SUPERADMIN |
 | RN-10 | Una empresa puede tener múltiples contactos y marcas |
 | RN-11 | Validar duplicados de marca por empresa antes de crear |
 | RN-12 | Eliminación lógica únicamente, nunca física |
 | RN-13 | Cancelación requiere observacion_cancelacion obligatoria |
-| RN-14 | Una solicitud CANCELADA no puede volver a BORRADOR |
+| RN-14 | Una solicitud CANCELADO no puede volver a BORRADOR |
 | RN-15 | PEDIDO o REPOSICION originados de un DISEÑO deben referenciar solicitud_origen_id |
+| RN-16 | codigoSolicitud = "P-" + 1 letra + 5 dígitos, patrón `P-[A-Z]{1}[0-9]{5}`, inicia en `P-A00001` |
+| RN-17 | Siglas de documentos: Arte `ART-`, Orden de Compra `OC-`, Solicitud `P-`, Base de Datos `BD-` |
+| RN-18 | codigoArte = "ART-" + 1 letra + 4 dígitos + versión, patrón `ART-[A-Z]{1}[0-9]{4}-[0-9]{2}`, inicia en `ART-A0001-00`, versión máxima `-99` |
+| RN-19 | Al crear solicitud DISEÑO, buscar Arte existente por Empresa+Marca+Producto antes de crear uno nuevo |
+| RN-20 | Una solicitud DISEÑO puede generar máximo 3 versiones de Arte en una sola entrega |
+| RN-21 | Solicitudes que no son DISEÑO no modifican versión de Arte, solo lo referencian |
+| RN-22 | SUPERADMIN es único e inmutable desde la interfaz; se aprovisiona por script de inicialización backend |
+| RN-23 | ADMIN no puede ver ni modificar al SUPERADMIN, ni auto-eliminarse |
+| RN-24 | OPERATOR: solo lectura global de solicitudes, sin acceso a empresas/contactos/marcas |
 
 ---
 
@@ -225,6 +284,8 @@ El mismo mecanismo aplica para `REPOSICION`.
 | idx_solicitudes_asesor | solicitudes | asesor_id |
 | idx_solicitudes_created_at | solicitudes | created_at DESC |
 | idx_solicitudes_origen | solicitudes | solicitud_origen_id |
+| idx_solicitudes_arte | solicitudes | arte_id |
 | idx_contactos_empresa | contactos | empresa_id |
 | idx_marcas_empresa | marcas | empresa_id |
 | idx_contacto_emails_contacto | contacto_emails | contacto_id |
+| idx_artes_combinacion | artes | (empresa_id, marca_id, producto_id) |

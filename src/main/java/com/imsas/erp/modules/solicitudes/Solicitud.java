@@ -1,5 +1,6 @@
 package com.imsas.erp.modules.solicitudes;
 
+import com.imsas.erp.modules.artes.Arte;
 import com.imsas.erp.modules.contactos.Contacto;
 import com.imsas.erp.modules.empresas.Empresa;
 import com.imsas.erp.modules.marcas.Marca;
@@ -27,7 +28,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 /**
  * Entidad central del sistema. Representa un requerimiento comercial gestionado
@@ -128,7 +128,7 @@ public class Solicitud extends BaseEntity {
     // ─── Códigos (RN-04, RN-06, RN-07, RN-08) ────────────────────────────────
 
     /**
-     * Código único. Formato {@code P-S{N}} (p. ej. {@code P-S59644}).
+     * Código único. Formato {@code P-[A-Z]\d{5}} (p. ej. {@code P-A00001}).
      * {@code updatable = false} garantiza inmutabilidad a nivel JPA (RN-06).
      * Nulo hasta que la solicitud pasa a PENDIENTE (RN-04).
      */
@@ -136,7 +136,8 @@ public class Solicitud extends BaseEntity {
     private String codigo;
 
     /**
-     * Código base de datos. Formato {@code BD-S{N}}. Derivado de {@code codigo} (RN-07).
+     * Código base de datos. Formato {@code BD-[A-Z]\d{5}} (p. ej. {@code BD-A00001}).
+     * Derivado de {@code codigo} con prefijo "BD-" (RN-07).
      */
     @Column(name = "codigo_base_datos", unique = true, length = 20)
     private String codigoBaseDatos;
@@ -256,4 +257,33 @@ public class Solicitud extends BaseEntity {
      */
     @Column(name = "observacion_cancelacion", columnDefinition = "TEXT")
     private String observacionCancelacion;
+
+    // ─── Arte vinculado (RN-18, RN-19, RN-20) ────────────────────────────────
+
+    /**
+     * Arte base al que pertenece esta solicitud. FK opcional → {@code artes}.
+     * Aplica principalmente a solicitudes de tipo DISEÑO.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "arte_id",
+            foreignKey = @ForeignKey(name = "fk_solicitud_arte")
+    )
+    private Arte arte;
+
+    /**
+     * Versión del arte que fue generada/entregada en esta solicitud.
+     * Corresponde al valor de {@code arte.versionActual} en el momento de la entrega.
+     * Nulo si la solicitud no generó versión de arte.
+     */
+    @Column(name = "version_arte_generada")
+    private Short versionArteGenerada;
+
+    /**
+     * Cantidad de versiones de arte entregadas en esta solicitud.
+     * Máximo 3 por solicitud (RN-20). Validado en servicio y en BD.
+     * Nulo si no aplica.
+     */
+    @Column(name = "cantidad_versiones_entregadas")
+    private Short cantidadVersionesEntregadas;
 }

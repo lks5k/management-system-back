@@ -65,8 +65,8 @@ public interface SolicitudRepository
 
     /**
      * Lista las solicitudes activas de un asesor con paginación.
-     * Usado cuando el rol del usuario autenticado es SALES_REP u OFFICER
-     * (solo ven sus propias solicitudes).
+     * Usado cuando el rol del usuario autenticado es SALES_REP
+     * (solo ve sus propias solicitudes).
      *
      * @param asesorId ID del usuario asesor
      * @param pageable configuración de página

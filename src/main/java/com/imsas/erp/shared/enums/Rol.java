@@ -12,8 +12,7 @@ package com.imsas.erp.shared.enums;
  *   <li>{@link #SUPERADMIN} — Control total, gestión de usuarios y roles</li>
  *   <li>{@link #ADMIN} — Gestión completa, edición de cualquier registro</li>
  *   <li>{@link #MANAGER} — Supervisión, aprobación y reportes globales</li>
- *   <li>{@link #OPERATOR} — CRUD de maestros y solicitudes</li>
- *   <li>{@link #OFFICER} — Gestión de solicitudes propias</li>
+ *   <li>{@link #OPERATOR} — Operaciones de producción, acceso restringido</li>
  *   <li>{@link #SALES_REP} — Gestión comercial de su cartera de clientes</li>
  * </ol>
  */
@@ -27,7 +26,8 @@ public enum Rol {
 
     /**
      * Gestión completa del sistema.
-     * Puede editar cualquier registro y cambiar cualquier estado.
+     * Puede editar cualquier registro, cambiar cualquier estado y versionar
+     * el código de base de datos de solicitudes (RN-09).
      */
     ADMIN,
 
@@ -38,22 +38,16 @@ public enum Rol {
     MANAGER,
 
     /**
-     * Gestión operativa.
-     * CRUD completo de empresas, contactos, marcas, productos y solicitudes.
-     * Puede versionar el código de base de datos (RN-09).
+     * Operaciones de producción.
+     * Solo lectura sobre solicitudes; sin acceso a maestros de
+     * empresas, contactos ni marcas. No puede versionar código BD (RN-09).
      */
     OPERATOR,
 
     /**
-     * Gestión de solicitudes propias.
-     * Puede crear, editar sus propias solicitudes y adjuntar archivos.
-     */
-    OFFICER,
-
-    /**
      * Representante comercial.
      * Gestiona su cartera de clientes y sus propias solicitudes.
-     * Puede versionar el código BD de sus solicitudes (RN-09).
+     * Puede versionar el código BD de sus propias solicitudes (RN-09).
      */
     SALES_REP
 }
