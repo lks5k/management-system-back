@@ -1,5 +1,6 @@
 package com.imsas.erp.modules.usuarios;
 
+import com.imsas.erp.shared.enums.Rol;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,12 +30,22 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
     /**
      * Verifica si ya existe un usuario con el email dado (activo o no).
-     * Usado para validar unicidad antes de crear o actualizar un usuario.
+     * Usado para validar unicidad antes de crear un usuario.
      *
      * @param email dirección de correo electrónico
      * @return {@code true} si el email ya está registrado
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Verifica si existe otro usuario con el mismo email, excluyendo un ID concreto.
+     * Usado para validar unicidad al actualizar sin colisionar consigo mismo.
+     *
+     * @param email dirección de correo electrónico
+     * @param id    ID del usuario a excluir de la búsqueda
+     * @return {@code true} si hay otro usuario activo o inactivo con ese email
+     */
+    boolean existsByEmailAndIdNot(String email, UUID id);
 
     /**
      * Lista todos los usuarios activos con paginación.
@@ -43,4 +54,16 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
      * @return página de usuarios activos
      */
     Page<Usuario> findAllByActivoTrue(Pageable pageable);
+
+    /**
+     * Lista los usuarios activos excluyendo un rol específico con paginación.
+     *
+     * <p>Usado por ADMIN para listar usuarios sin incluir los de rol SUPERADMIN,
+     * con quienes no tiene permisos de gestión.
+     *
+     * @param rol      rol a excluir de los resultados
+     * @param pageable configuración de página y ordenamiento
+     * @return página de usuarios activos con rol distinto al indicado
+     */
+    Page<Usuario> findAllByActivoTrueAndRolNot(Rol rol, Pageable pageable);
 }

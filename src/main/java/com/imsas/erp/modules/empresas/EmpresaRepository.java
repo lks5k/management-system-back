@@ -67,4 +67,39 @@ public interface EmpresaRepository extends JpaRepository<Empresa, UUID> {
                 OR e.numeroDocumento LIKE CONCAT('%', :termino, '%'))
             """)
     Page<Empresa> buscarActivas(@Param("termino") String termino, Pageable pageable);
+
+    /**
+     * Búsqueda paginada de empresas activas con filtros opcionales combinados.
+     *
+     * <p>Todos los parámetros son opcionales: si son {@code null} se ignoran
+     * en el predicado correspondiente. El parámetro {@code creadoPorId} permite
+     * restringir la cartera a las empresas del propio SALES_REP.
+     *
+     * @param termino      texto libre sobre razón social o número de documento;
+     *                     si es {@code null} o vacío se omite el filtro de texto
+     * @param tipoEmpresa  tipo de constitución legal; {@code null} para no filtrar
+     * @param ciudad       nombre de ciudad (parcial, insensible a mayúsculas);
+     *                     {@code null} para no filtrar
+     * @param creadoPorId  UUID del usuario creador para restringir cartera (SALES_REP);
+     *                     {@code null} para ver todas
+     * @param pageable     configuración de página y ordenamiento
+     * @return página de empresas que cumplen todos los criterios
+     */
+    @Query("""
+            SELECT e FROM Empresa e
+            WHERE e.activo = true
+              AND (:termino IS NULL
+                OR LOWER(e.razonSocial) LIKE LOWER(CONCAT('%', :termino, '%'))
+                OR e.numeroDocumento LIKE CONCAT('%', :termino, '%'))
+              AND (:tipoEmpresa IS NULL OR e.tipoEmpresa = :tipoEmpresa)
+              AND (:ciudad IS NULL OR LOWER(e.ciudad) LIKE LOWER(CONCAT('%', :ciudad, '%')))
+              AND (:creadoPorId IS NULL OR e.creadoPor.id = :creadoPorId)
+            """)
+    Page<Empresa> buscarConFiltros(
+            @Param("termino") String termino,
+            @Param("tipoEmpresa") TipoEmpresa tipoEmpresa,
+            @Param("ciudad") String ciudad,
+            @Param("creadoPorId") UUID creadoPorId,
+            Pageable pageable
+    );
 }

@@ -33,4 +33,16 @@ public interface ContactoEmailRepository extends JpaRepository<ContactoEmail, UU
      * @return {@code true} si el email ya está registrado para ese contacto
      */
     boolean existsByContactoIdAndEmail(UUID contactoId, String email);
+
+    /**
+     * Elimina físicamente todos los correos de un contacto.
+     *
+     * <p>Usado durante la actualización de un contacto para implementar el
+     * reemplazo completo de la lista de emails. {@link ContactoEmail} no tiene
+     * valor histórico propio (no extiende {@code BaseEntity} ni tiene campo
+     * {@code activo}), por lo que la eliminación física no viola RN-12.
+     *
+     * @param contactoId ID del contacto cuyos correos se eliminarán
+     */
+    void deleteAllByContactoId(UUID contactoId);
 }

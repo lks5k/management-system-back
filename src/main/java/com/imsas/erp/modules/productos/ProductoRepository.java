@@ -10,15 +10,16 @@ import java.util.UUID;
 /**
  * Repositorio de acceso a datos para {@link Producto}.
  *
- * <p>Solo {@code ADMIN} y {@code SUPERADMIN} pueden modificar esta lista (RN-16).
- * Esa restricción se aplica en la capa de seguridad del controller.
+ * <p>Los métodos de existencia usan comparación <em>exacta</em> porque el servicio
+ * siempre normaliza el nombre con {@code trim().toUpperCase()} antes de invocarlos
+ * (RN-25). No se usa {@code IgnoreCase} para no enmascarar fallos de normalización.
  */
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, UUID> {
 
     /**
      * Lista todos los productos activos con paginación.
-     * Es el endpoint que ven los asesores para seleccionar producto en una solicitud.
+     * Es el catálogo que consultan los asesores al crear una solicitud.
      *
      * @param pageable configuración de página
      * @return página de productos activos
@@ -26,19 +27,21 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
     Page<Producto> findAllByActivoTrue(Pageable pageable);
 
     /**
-     * Verifica si ya existe un producto con ese nombre (insensible a mayúsculas).
+     * Verifica si ya existe un producto con ese nombre exacto en el sistema.
+     * El llamador debe pasar el nombre ya normalizado (trim + uppercase).
      *
-     * @param nombre nombre del producto
-     * @return {@code true} si el nombre ya existe
+     * @param nombre nombre del producto ya normalizado
+     * @return {@code true} si el nombre ya está registrado
      */
-    boolean existsByNombreIgnoreCase(String nombre);
+    boolean existsByNombre(String nombre);
 
     /**
      * Verifica duplicado excluyendo el propio producto al actualizar.
+     * El llamador debe pasar el nombre ya normalizado (trim + uppercase).
      *
-     * @param nombre nombre del producto
+     * @param nombre nombre del producto ya normalizado
      * @param id     ID del producto a excluir
-     * @return {@code true} si hay otro producto activo con ese nombre
+     * @return {@code true} si hay otro producto con ese nombre
      */
-    boolean existsByNombreIgnoreCaseAndIdNot(String nombre, UUID id);
+    boolean existsByNombreAndIdNot(String nombre, UUID id);
 }

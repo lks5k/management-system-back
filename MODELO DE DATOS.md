@@ -135,7 +135,7 @@
 | created_at | TIMESTAMPTZ | NOT NULL |
 | updated_at | TIMESTAMPTZ | NOT NULL |
 
-**Restricción:** UNIQUE (empresa_id, marca_id, producto_id) WHERE activo = true — solo puede
+**Restricción:** UNIQUE (empresa_id, marca_id, producto_id) — solo puede
 existir un Arte vigente por esa combinación exacta.
 
 **Restricción:** CHECK (version_actual BETWEEN 0 AND 99)
@@ -168,6 +168,7 @@ existir un Arte vigente por esa combinación exacta.
 | contacto_id | UUID | FK → contactos (nullable) |
 | marca_id | UUID | FK → marcas (nullable) |
 | producto_id | UUID | FK → productos (nullable) |
+| detalle_producto | VARCHAR(200) | nullable — variante o especificación libre (ej. "STICKER QR") sin afectar la tabla productos |
 | tipo_solicitud | VARCHAR(20) | NOT NULL, enum |
 | descripcion | TEXT | |
 | cantidad | INTEGER | NOT NULL, > 0 |
@@ -258,7 +259,7 @@ PRESTAMO) solo **referencian** el Arte vigente — no lo modifican.
 | RN-08 | version_bd incrementa solo por corrección estructural de los datos del cliente con motivo obligatorio |
 | RN-09 | Pueden versionar BD: SALES_REP, ADMIN, SUPERADMIN |
 | RN-10 | Una empresa puede tener múltiples contactos y marcas |
-| RN-11 | Validar duplicados de marca por empresa antes de crear |
+| RN-11 | Al crear Marca nueva, normalizar (trim+uppercase) y comparar contra existentes de la misma empresa; advertencia no bloqueante si coincide |
 | RN-12 | Eliminación lógica únicamente, nunca física |
 | RN-13 | Cancelación requiere observacion_cancelacion obligatoria |
 | RN-14 | Una solicitud CANCELADO no puede volver a BORRADOR |
@@ -272,6 +273,7 @@ PRESTAMO) solo **referencian** el Arte vigente — no lo modifican.
 | RN-22 | SUPERADMIN es único e inmutable desde la interfaz; se aprovisiona por script de inicialización backend |
 | RN-23 | ADMIN no puede ver ni modificar al SUPERADMIN, ni auto-eliminarse |
 | RN-24 | OPERATOR: solo lectura global de solicitudes, sin acceso a empresas/contactos/marcas |
+| RN-25 | Empresa.razon_social, Marca.nombre y Producto.nombre se normalizan (trim+uppercase) antes de guardar |
 
 ---
 

@@ -361,7 +361,7 @@ ya existe uno asociado a la combinación Empresa+Marca+Producto.
 | RN-08 | version_bd incrementa solo por corrección estructural de los datos del cliente (tallas, cantidades, colores, referencias) con motivo obligatorio |
 | RN-09 | Pueden versionar código BD: SALES_REP, ADMIN, SUPERADMIN |
 | RN-10 | Una empresa puede tener múltiples contactos y marcas |
-| RN-11 | Validar duplicados de marca por empresa antes de crear |
+| RN-11 | Al crear una Marca nueva, normalizar el nombre (trim + uppercase) y comparar contra marcas existentes de la misma empresa; si hay coincidencia exacta tras normalizar, mostrar advertencia no bloqueante al usuario |
 | RN-12 | Eliminación lógica únicamente, nunca física |
 | RN-13 | Cancelación requiere observacion_cancelacion obligatoria |
 | RN-14 | Una solicitud CANCELADO no puede volver a BORRADOR |
@@ -375,6 +375,7 @@ ya existe uno asociado a la combinación Empresa+Marca+Producto.
 | RN-22 | El SUPERADMIN es único e inmutable desde la interfaz; se aprovisiona mediante script de inicialización en el backend |
 | RN-23 | ADMIN no puede ver ni modificar al SUPERADMIN, ni auto-eliminarse |
 | RN-24 | OPERATOR tiene acceso de solo lectura a todas las solicitudes; sin acceso a empresas, contactos ni marcas |
+| RN-25 | Los campos Empresa.razonSocial, Marca.nombre y Producto.nombre se normalizan (trim + uppercase) antes de guardar en base de datos, para evitar duplicados por variación de mayúsculas o espacios |
 
 ---
 

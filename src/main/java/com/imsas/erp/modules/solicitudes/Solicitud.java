@@ -115,6 +115,14 @@ public class Solicitud extends BaseEntity {
     private Producto producto;
 
     /**
+     * Variante o especificación libre del producto seleccionado (p. ej. "STICKER QR").
+     * Permite describir una variante sin crear un producto nuevo en la tabla {@code productos}.
+     * Máximo 200 caracteres. Opcional.
+     */
+    @Column(name = "detalle_producto", length = 200)
+    private String detalleProducto;
+
+    /**
      * Solicitud de origen para PEDIDO/REPOSICION derivados de un DISEÑO (RN-15).
      * Autorreferencia a la misma tabla {@code solicitudes}.
      */
