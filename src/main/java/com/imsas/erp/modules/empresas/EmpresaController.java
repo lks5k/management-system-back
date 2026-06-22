@@ -24,25 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-/**
- * Controller REST para gestión de empresas cliente.
- *
- * <h3>Endpoints</h3>
- * <pre>
- * GET    /api/v1/empresas          → Listar paginado con filtros   (ADMIN, SUPERADMIN, MANAGER, SALES_REP)
- * GET    /api/v1/empresas/{id}     → Buscar por ID                 (ADMIN, SUPERADMIN, MANAGER, SALES_REP)
- * POST   /api/v1/empresas          → Crear empresa                 (ADMIN, SUPERADMIN, SALES_REP)
- * PUT    /api/v1/empresas/{id}     → Actualizar empresa            (ADMIN, SUPERADMIN, SALES_REP)
- * DELETE /api/v1/empresas/{id}     → Soft delete                   (ADMIN, SUPERADMIN)
- * </pre>
- *
- * <p><b>OPERATOR no tiene acceso a ningún endpoint de este módulo (RN-24).</b>
- * El {@code @PreAuthorize} de cada método enumera explícitamente los roles permitidos,
- * excluyendo OPERATOR por omisión.
- *
- * <p>La autorización fina (cartera de SALES_REP, acceso a empresa ajena, etc.)
- * se delega al {@link EmpresaService}.
- */
 @RestController
 @RequestMapping("/api/v1/empresas")
 @RequiredArgsConstructor
@@ -52,26 +33,7 @@ public class EmpresaController {
 
     // ─── GET /api/v1/empresas ─────────────────────────────────────────────────
 
-    /**
-     * Lista empresas activas con paginación y filtros opcionales.
-     *
-     * <p>Query params aceptados:
-     * <ul>
-     *   <li>{@code termino} — texto libre sobre razón social o número de documento</li>
-     *   <li>{@code tipoEmpresa} — enum {@link TipoEmpresa} (SAS, SA, LTDA, PERSONA_NATURAL, OTRO)</li>
-     *   <li>{@code ciudad} — nombre de ciudad (parcial, insensible a mayúsculas)</li>
-     *   <li>{@code page}, {@code size}, {@code sort} — paginación estándar de Spring</li>
-     * </ul>
-     *
-     * <p>SALES_REP solo ve su propia cartera; MANAGER, ADMIN y SUPERADMIN ven todo.
-     *
-     * @param termino     texto libre de búsqueda (opcional)
-     * @param tipoEmpresa filtro por tipo de constitución (opcional)
-     * @param ciudad      filtro por ciudad (opcional)
-     * @param pageable    parámetros de paginación
-     * @param autenticado usuario autenticado inyectado por Spring Security
-     * @return página de empresas en el envelope estándar
-     */
+    
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','MANAGER','SALES_REP')")
     public ResponseEntity<ApiResponse<PageResponse<EmpresaResponse>>> listar(
@@ -89,16 +51,7 @@ public class EmpresaController {
 
     // ─── GET /api/v1/empresas/{id} ────────────────────────────────────────────
 
-    /**
-     * Obtiene los datos de una empresa activa por ID.
-     *
-     * <p>SALES_REP solo puede consultar empresas de su cartera;
-     * el servicio lanzará 403 si intenta acceder a una empresa de otro representante.
-     *
-     * @param id          UUID de la empresa
-     * @param autenticado usuario autenticado inyectado por Spring Security
-     * @return datos de la empresa en el envelope estándar
-     */
+    
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','MANAGER','SALES_REP')")
     public ResponseEntity<ApiResponse<EmpresaResponse>> buscarPorId(
@@ -110,16 +63,7 @@ public class EmpresaController {
 
     // ─── POST /api/v1/empresas ────────────────────────────────────────────────
 
-    /**
-     * Registra una nueva empresa cliente.
-     *
-     * <p>El usuario autenticado queda almacenado como {@code creadoPor}.
-     * El número de documento debe ser único en el sistema, incluidos registros inactivos (RN-02).
-     *
-     * @param request     datos de la empresa validados por JSR-380
-     * @param autenticado usuario autenticado inyectado por Spring Security
-     * @return 201 Created con los datos de la empresa creada
-     */
+    
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','SALES_REP')")
     public ResponseEntity<ApiResponse<EmpresaResponse>> crear(
@@ -131,17 +75,7 @@ public class EmpresaController {
 
     // ─── PUT /api/v1/empresas/{id} ────────────────────────────────────────────
 
-    /**
-     * Actualiza los datos de una empresa activa.
-     *
-     * <p>SALES_REP solo puede actualizar empresas de su propia cartera;
-     * el servicio lanzará 403 si intenta modificar una empresa de otro representante.
-     *
-     * @param id          UUID de la empresa a actualizar
-     * @param request     datos actualizados validados por JSR-380
-     * @param autenticado usuario autenticado inyectado por Spring Security
-     * @return 200 OK con los datos actualizados
-     */
+    
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','SALES_REP')")
     public ResponseEntity<ApiResponse<EmpresaResponse>> actualizar(
@@ -154,16 +88,7 @@ public class EmpresaController {
 
     // ─── DELETE /api/v1/empresas/{id} ─────────────────────────────────────────
 
-    /**
-     * Desactiva una empresa (soft delete). Nunca borra el registro físicamente.
-     *
-     * <p>Solo ADMIN y SUPERADMIN pueden desactivar empresas.
-     * SALES_REP y MANAGER no tienen acceso a este endpoint.
-     *
-     * @param id          UUID de la empresa a desactivar
-     * @param autenticado usuario autenticado inyectado por Spring Security
-     * @return 204 No Content
-     */
+    
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
     public ResponseEntity<Void> desactivar(

@@ -29,20 +29,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-/**
- * Configuración principal de Spring Security.
- *
- * <h3>Decisiones de diseño</h3>
- * <ul>
- *   <li>CSRF deshabilitado: la API es stateless y los clientes son SPAs que
- *       no usan cookies de sesión.</li>
- *   <li>Sesión STATELESS: Spring Security nunca crea ni usa {@code HttpSession}.</li>
- *   <li>{@code @EnableMethodSecurity}: habilita {@code @PreAuthorize} en los
- *       controllers para control de acceso por rol a nivel de método.</li>
- *   <li>Los handlers de 401 y 403 retornan el envelope {@link ApiResponse}
- *       en JSON, manteniendo el contrato de la API.</li>
- * </ul>
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -54,16 +40,8 @@ public class SecurityConfig {
     private final ObjectMapper           objectMapper;
 
     /**
-     * Configura la cadena de filtros de seguridad HTTP.
-     *
-     * <p>Rutas públicas:
-     * <ul>
-     *   <li>{@code POST /api/v1/auth/**} — login y refresh token</li>
-     *   <li>{@code GET /actuator/health} — health check para balanceadores</li>
-     * </ul>
-     *
-     * @param http constructor de seguridad HTTP
-     * @return cadena de filtros configurada
+     * Cadena de filtros principal: sin sesión (stateless), JWT como mecanismo de autenticación.
+     * Solo el endpoint de login es público; todo lo demás requiere token válido.
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -73,25 +51,18 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .anyRequest().authenticated()
                 )
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(this::handleUnauthorized)
                         .accessDeniedHandler(this::handleForbidden)
                 )
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
-    /**
-     * Proveedor de autenticación DAO que delega en {@link UserDetailsServiceImpl}
-     * y usa BCrypt para verificar la contraseña.
-     *
-     * @return proveedor de autenticación configurado
-     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -100,38 +71,17 @@ public class SecurityConfig {
         return provider;
     }
 
-    /**
-     * Expone el {@link AuthenticationManager} como bean para que
-     * {@code AuthService} pueda invocarlo directamente al hacer login.
-     *
-     * @param config configuración de autenticación de Spring
-     * @return gestor de autenticación
-     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
             throws Exception {
         return config.getAuthenticationManager();
     }
 
-    /**
-     * Encoder BCrypt para contraseñas. Strength 10 (por defecto).
-     *
-     * @return encoder de contraseñas
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Configuración CORS para el frontend (HTML + Alpine.js).
-     *
-     * <p>En desarrollo se permiten todos los orígenes ({@code *}).
-     * En producción se debe restringir a los dominios del frontend
-     * mediante variables de entorno. Configuración pendiente para prod.
-     *
-     * @return fuente de configuración CORS
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -146,12 +96,6 @@ public class SecurityConfig {
         return source;
     }
 
-    // ─── Handlers de error en formato envelope ────────────────────────────────
-
-    /**
-     * Devuelve 401 en formato JSON envelope cuando el token es inválido o ausente.
-     * Evita que Spring Security retorne su página HTML de error por defecto.
-     */
     private void handleUnauthorized(
             jakarta.servlet.http.HttpServletRequest request,
             HttpServletResponse response,
@@ -161,10 +105,6 @@ public class SecurityConfig {
                 "AUTHENTICATION_FAILED", "Autenticación requerida o credenciales inválidas");
     }
 
-    /**
-     * Devuelve 403 en formato JSON envelope cuando el usuario no tiene los permisos
-     * necesarios para el recurso solicitado.
-     */
     private void handleForbidden(
             jakarta.servlet.http.HttpServletRequest request,
             HttpServletResponse response,
@@ -174,14 +114,6 @@ public class SecurityConfig {
                 "ACCESS_DENIED", "No tienes permisos para realizar esta acción");
     }
 
-    /**
-     * Serializa un {@link ApiResponse} de error al body de la respuesta HTTP.
-     *
-     * @param response   respuesta HTTP a escribir
-     * @param statusCode código HTTP (401 o 403)
-     * @param code       código interno del error
-     * @param message    mensaje descriptivo en español
-     */
     private void writeErrorResponse(
             HttpServletResponse response,
             int statusCode,

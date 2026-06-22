@@ -10,15 +10,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-/**
- * Inicializador de datos exclusivo del perfil {@code dev}.
- *
- * <p>Se ejecuta una única vez al arrancar la aplicación en desarrollo.
- * Crea un usuario {@code SUPERADMIN} si no existe ninguno en la BD,
- * permitiendo hacer el primer login sin migraciones adicionales de datos.
- *
- * <p><strong>No se ejecuta en producción</strong> ({@code @Profile("dev")}).
- */
 @Slf4j
 @Component
 @Profile("dev")
@@ -32,12 +23,7 @@ public class DevDataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder   passwordEncoder;
 
-    /**
-     * Crea el superadmin de desarrollo si no existe.
-     * Imprime las credenciales en el log para facilitar el primer acceso.
-     *
-     * @param args argumentos de línea de comandos (no usados)
-     */
+    
     @Override
     public void run(String... args) {
         if (usuarioRepository.existsByEmail(SUPERADMIN_EMAIL)) {

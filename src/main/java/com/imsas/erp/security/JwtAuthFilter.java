@@ -16,23 +16,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * Filtro JWT que se ejecuta una sola vez por request ({@link OncePerRequestFilter}).
- *
- * <p>Flujo de procesamiento:
- * <ol>
- *   <li>Lee el header {@code Authorization: Bearer {token}}.</li>
- *   <li>Si no hay header o no empieza con {@code "Bearer "}, pasa al siguiente filtro sin autenticar.</li>
- *   <li>Extrae el email del token sin validar la firma aún (solo parseo del subject).</li>
- *   <li>Si el SecurityContext ya tiene una autenticación, no sobreescribe.</li>
- *   <li>Carga el {@link UserDetails} desde la BD y valida el token completo.</li>
- *   <li>Si es válido, establece la autenticación en el {@link SecurityContextHolder}.</li>
- * </ol>
- *
- * <p>Cualquier error de token (expirado, firma inválida) no lanza excepción aquí:
- * simplemente no se establece la autenticación y Spring Security devuelve 401
- * automáticamente para los endpoints protegidos.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -44,13 +27,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService            jwtService;
     private final UserDetailsServiceImpl userDetailsService;
 
-    /**
-     * Procesa cada request HTTP para extraer y validar el token JWT.
-     *
-     * @param request     solicitud HTTP entrante
-     * @param response    respuesta HTTP
-     * @param filterChain cadena de filtros de Spring Security
-     */
+    
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,

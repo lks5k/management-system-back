@@ -16,16 +16,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Entidad que representa una marca comercial asociada a una empresa cliente.
- *
- * <p>Una empresa puede tener múltiples marcas (RN-10). Antes de crear una marca
- * se validan duplicados aproximados dentro de la misma empresa (RN-11); esa
- * validación vive en la capa de servicio.
- *
- * <p>La unicidad exacta {@code (nombre, empresa_id)} se garantiza con la
- * constraint {@code uq_marca_nombre_empresa} a nivel de BD.
- */
 @Getter
 @Setter
 @SuperBuilder
@@ -43,15 +33,11 @@ import lombok.Setter;
 )
 public class Marca extends BaseEntity {
 
-    /**
-     * Nombre de la marca. Único por empresa.
-     */
+    
     @Column(nullable = false, length = 120)
     private String nombre;
 
-    /**
-     * Empresa dueña de esta marca. FK obligatoria.
-     */
+    
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "empresa_id",
