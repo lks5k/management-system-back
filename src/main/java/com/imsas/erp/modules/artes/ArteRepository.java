@@ -2,7 +2,10 @@ package com.imsas.erp.modules.artes;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -54,4 +57,39 @@ public interface ArteRepository extends JpaRepository<Arte, UUID> {
      * @return {@code true} si el código ya está registrado
      */
     boolean existsByCodigo(String codigo);
+
+    /**
+     * Búsqueda paginada con filtros opcionales por empresa, marca, producto y estado de vigencia.
+     *
+     * <p>Todos los parámetros son nullable: un valor {@code null} equivale a "no filtrar por este campo".
+     * Para {@code activoFiltro}: {@code Boolean.TRUE} retorna solo vigentes; {@code null} retorna
+     * vigentes e históricos.
+     *
+     * <p>{@code @EntityGraph} inicializa las asociaciones LAZY {@code empresa}, {@code marca} y
+     * {@code producto} en un único JOIN, evitando el problema N+1 en listados paginados.
+     * A diferencia de {@code JOIN FETCH} en JPQL, {@code @EntityGraph} no interfiere con la
+     * query COUNT que Spring Data genera automáticamente para la paginación.
+     *
+     * @param empresaId    ID de la empresa; {@code null} = sin filtro
+     * @param marcaId      ID de la marca; {@code null} = sin filtro
+     * @param productoId   ID del producto; {@code null} = sin filtro
+     * @param activoFiltro {@code true} = solo vigentes; {@code null} = vigentes + históricos
+     * @param pageable     configuración de página y ordenamiento
+     * @return página de Artes que cumplen los filtros indicados
+     */
+    @EntityGraph(attributePaths = {"empresa", "marca", "producto"})
+    @Query("""
+            SELECT a FROM Arte a
+            WHERE (:empresaId    IS NULL OR a.empresa.id  = :empresaId)
+              AND (:marcaId      IS NULL OR a.marca.id    = :marcaId)
+              AND (:productoId   IS NULL OR a.producto.id = :productoId)
+              AND (:activoFiltro IS NULL OR a.activo      = :activoFiltro)
+            """)
+    Page<Arte> buscarConFiltros(
+            @Param("empresaId")    UUID    empresaId,
+            @Param("marcaId")      UUID    marcaId,
+            @Param("productoId")   UUID    productoId,
+            @Param("activoFiltro") Boolean activoFiltro,
+            Pageable pageable
+    );
 }
