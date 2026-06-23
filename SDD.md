@@ -354,7 +354,7 @@ ya existe uno asociado a la combinación Empresa+Marca+Producto.
 | RN-01 | Toda solicitud debe pertenecer a una empresa |
 | RN-02 | El número de documento de la empresa es único |
 | RN-03 | El correo electrónico debe tener formato válido |
-| RN-04 | El código de solicitud se genera al pasar de BORRADOR a PENDIENTE |
+| RN-04 | El código de solicitud se genera al pasar de BORRADOR a CONFIRMAR |
 | RN-05 | El consecutivo de solicitudes nunca se reinicia |
 | RN-06 | El código de solicitud es inmutable una vez asignado |
 | RN-07 | codigoBaseDatos = "BD-" + sufijo del código de solicitud + versión. Versión inicia en -00 |
