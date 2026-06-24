@@ -31,4 +31,8 @@ public class Producto extends BaseEntity {
     
     @Column(nullable = false, length = 120)
     private String nombre;
+
+    
+    @Column(columnDefinition = "TEXT")
+    private String descripcion;
 }

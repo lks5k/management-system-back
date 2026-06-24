@@ -18,7 +18,7 @@ public record UsuarioRequest(
         String email,
 
         @Size(min = 8, max = 100, message = "La contraseña debe tener entre 8 y 100 caracteres")
-        String passwordInicial,
+        String password,
 
         @NotNull(message = "El rol es obligatorio")
         Rol rol

@@ -45,6 +45,7 @@ public class ProductoService {
 
         Producto producto = Producto.builder()
                 .nombre(nombreNorm)
+                .descripcion(request.descripcion())
                 .build();
 
         Producto guardado = productoRepository.save(producto);
@@ -65,6 +66,7 @@ public class ProductoService {
         verificarNombreUnico(nombreNorm, id);
 
         producto.setNombre(nombreNorm);
+        producto.setDescripcion(request.descripcion());
 
         Producto guardado = productoRepository.save(producto);
         log.info("Producto actualizado: '{}' [{}] por {}",

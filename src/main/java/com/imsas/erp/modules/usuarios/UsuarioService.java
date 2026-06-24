@@ -50,7 +50,7 @@ public class UsuarioService {
         verificarPrivilegioRol(request.rol(), autenticado, "crear");
         verificarEmailUnico(request.email(), null);
 
-        if (request.passwordInicial() == null || request.passwordInicial().isBlank()) {
+        if (request.password() == null || request.password().isBlank()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "PASSWORD_REQUIRED",
                     "La contraseña inicial es obligatoria al crear un usuario");
         }
@@ -58,7 +58,7 @@ public class UsuarioService {
         Usuario nuevo = Usuario.builder()
                 .nombre(request.nombre().trim())
                 .email(request.email().trim().toLowerCase())
-                .password(passwordEncoder.encode(request.passwordInicial()))
+                .password(passwordEncoder.encode(request.password()))
                 .rol(request.rol())
                 .build();
 
@@ -86,6 +86,26 @@ public class UsuarioService {
         Usuario guardado = usuarioRepository.save(target);
         log.info("Usuario actualizado: {} por {}", guardado.getEmail(), autenticado.getEmail());
 
+        return UsuarioResponse.from(guardado);
+    }
+
+    // ─── Toggle activo/inactivo ───────────────────────────────────────────────
+
+    
+    @Transactional
+    public UsuarioResponse cambiarEstado(UUID id, CambiarEstadoUsuarioRequest request, Usuario autenticado) {
+        Usuario target = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario", id));
+
+        if (!request.activo() && id.equals(autenticado.getId())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "SELF_DEACTIVATION",
+                    "No puedes desactivar tu propia cuenta");
+        }
+
+        verificarAccesoSobreTarget(target, autenticado, "modificar estado de");
+        target.setActivo(request.activo());
+        Usuario guardado = usuarioRepository.save(target);
+        log.info("Estado de usuario {} → {} por {}", target.getEmail(), request.activo(), autenticado.getEmail());
         return UsuarioResponse.from(guardado);
     }
 

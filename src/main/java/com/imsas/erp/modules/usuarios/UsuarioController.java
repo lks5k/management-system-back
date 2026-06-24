@@ -94,6 +94,19 @@ public class UsuarioController {
         return ApiResponse.noContent();
     }
 
+    // ─── PATCH /api/v1/usuarios/{id}/estado ──────────────────────────────────
+
+    
+    @PatchMapping("/{id}/estado")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+    public ResponseEntity<ApiResponse<UsuarioResponse>> cambiarEstado(
+            @PathVariable UUID id,
+            @Valid @RequestBody CambiarEstadoUsuarioRequest request,
+            @AuthenticationPrincipal Usuario autenticado
+    ) {
+        return ApiResponse.ok(usuarioService.cambiarEstado(id, request, autenticado));
+    }
+
     // ─── PATCH /api/v1/usuarios/{id}/password ─────────────────────────────────
 
     
