@@ -24,6 +24,11 @@ management:
     health:
       show-details: always
 
+# ── CORS ───────────────────────────────────────────────────────────
+app:
+  cors:
+    allowed-origin: "*"
+
 # ── Logging detallado en dev ───────────────────────────────────────
 logging:
   level:

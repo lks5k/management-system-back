@@ -30,6 +30,11 @@ management:
     health:
       show-details: never
 
+# ── CORS ───────────────────────────────────────────────────────────
+app:
+  cors:
+    allowed-origin: "${FRONTEND_URL}"
+
 # ── Logging conservador en prod ────────────────────────────────────
 logging:
   level:
