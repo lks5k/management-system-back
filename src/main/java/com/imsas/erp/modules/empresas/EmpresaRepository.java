@@ -39,10 +39,10 @@ public interface EmpresaRepository extends JpaRepository<Empresa, UUID> {
             SELECT e FROM Empresa e
             WHERE e.activo = true
               AND (:termino IS NULL
-                OR LOWER(e.razonSocial) LIKE LOWER(CONCAT('%', :termino, '%'))
-                OR e.numeroDocumento LIKE CONCAT('%', :termino, '%'))
+                OR LOWER(e.razonSocial) LIKE LOWER(CONCAT('%', CAST(:termino AS string), '%'))
+                OR e.numeroDocumento LIKE CONCAT('%', CAST(:termino AS string), '%'))
               AND (:tipoEmpresa IS NULL OR e.tipoEmpresa = :tipoEmpresa)
-              AND (:ciudad IS NULL OR LOWER(e.ciudad) LIKE LOWER(CONCAT('%', :ciudad, '%')))
+              AND (:ciudad IS NULL OR LOWER(e.ciudad) LIKE LOWER(CONCAT('%', CAST(:ciudad AS string), '%')))
               AND (:creadoPorId IS NULL OR e.creadoPor.id = :creadoPorId)
             """)
     Page<Empresa> buscarConFiltros(
