@@ -52,6 +52,7 @@ public class Contacto extends BaseEntity {
     private String telefono;
 
     
+    @Builder.Default
     @Column(name = "es_facturacion", nullable = false)
     private boolean esFacturacion = false;
 
