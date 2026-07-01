@@ -79,6 +79,9 @@ public class Empresa extends BaseEntity {
     @Column(nullable = false, length = 60)
     private String pais = "Colombia";
 
+    @Column(length = 100)
+    private String departamento;
+
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(

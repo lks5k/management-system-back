@@ -72,6 +72,7 @@ public class EmpresaService {
                 .pais(request.pais() != null && !request.pais().isBlank()
                         ? request.pais().trim()
                         : "Colombia")
+                .departamento(request.departamento())
                 .creadoPor(autenticado)
                 .build();
 
@@ -103,6 +104,7 @@ public class EmpresaService {
         empresa.setPais(request.pais() != null && !request.pais().isBlank()
                 ? request.pais().trim()
                 : "Colombia");
+        empresa.setDepartamento(request.departamento());
 
         Empresa guardada = empresaRepository.save(empresa);
         log.info("Empresa actualizada: '{}' [{}] por {}",

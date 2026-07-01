@@ -39,5 +39,8 @@ public record EmpresaRequest(
         Short diaCierreContable,
 
         @Size(max = 60, message = "El país no puede superar 60 caracteres")
-        String pais
+        String pais,
+
+        @Size(max = 100, message = "El departamento no puede superar 100 caracteres")
+        String departamento
 ) {}
